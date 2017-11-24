@@ -4,419 +4,417 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 
 
-class Vendor extends CI_Controller {
+class Store extends CI_Controller {
+ 
+
+	 public function __construct()
 
 
-
-	public function __construct()
 
 	{
 
- 		parent::__construct();
+		
+
+		 parent::__construct();
 
         $this->load->helper('form');
 
         $this->load->helper('url');
 
-		$this->load->model('Home_model');
+		$this->load->model('Store_model');
 
-		$this->load->model('Vendor_model');
-
-		$this->load->library('upload');	
+		$this->load->model('User_model');
 
 		$this->load->library('session');
 
-		$this->data['login_user_info']=$this->Home_model->get_login_information();
+ 		if($this->session->userdata('book_frant_login_user_id')){
+
+			$this->data['is_login']=1;
+
+			$this->data['login_user_info']=$this->User_model->get_login_information();
+
+		}else{
+
+			$this->data['is_login']=0;
+
+		}
+		$this->data['most_purchase_books_footer']=$this->Store_model->get_most_purchase_books_footer();
+		$this->data['top_rated_book_footer']=$this->Store_model->get_top_rated_book_footer();
+		$this->data['hearder_cart']=$this->User_model->get_header_cart();
+		$this->data['logo_rs']=$this->Store_model->get_setting();
 
  	}
 
 	
 
-	public function index()
+		public function index()
 
 	{
 
-		redirect('Home/index');
+	
 
-	}
+ 		$this->load->helper('url');
 
+		$this->load->library('session');
 
-	public function vendor_list(){
+		$this->load->model('Home_model');
 
-		if($this->Home_model->check_permission('vendor_management','list')){
+		$this->load->model('Store_model');
 
-			$this->load->helper('url');
+		$this->data['menus_html']=$this->Home_model->dyanamic_menu_html(); 
 
-			$this->data['page_name'] = 'vendor_list';
+  			$this->load->view('load_css');
 
-			$this->data['folder'] = 'vendor';
+			if($this->input->post('search_start')){
 
-			$this->data['page_title'] = 'Vendor List'; 
-
-			if($this->input->post('search_query')){
-
-				$search['search_query']=$this->input->post('search_query');
+				$data['start']=$this->input->post('search_start');
 
 			}else{
 
-				$search['search_query']="";
+				$data['start']=0;
 
 			}
 
-			if($this->input->post('is_published')>-1){
+			if($this->input->post('no_of_rc')){
 
-				$search['is_published']=$this->input->post('is_published');
+				$data['no_of_rc']=$this->input->post('no_of_rc');
 
 			}else{
 
-				$search['is_published']=-1;
+				$data['no_of_rc']=10;
 
 			}
 
-			$this->data['search'] = $search; 
+			if($this->input->post('sort_by')){
 
-			$this->data['results']=$this->Vendor_model->get_vendor_list($search);
-
-			$this->load->view('index',@$this->data);
-
-		}else{
-
-			redirect('Home/index');
-
-		}
-
-	}
-
-	public function vendor_add(){
-
-		if(($this->Home_model->check_permission('vendor_management','add'))||($this->Home_model->check_permission('vendor_management','edit'))){
-
-			$this->load->helper('url');
-
-			$this->load->library('session');
-
-			$this->data['page_name'] = 'vendor_add';
-
-			$this->data['folder'] = 'vendor'; 
-
-			if (@$this->uri->segment(3)) {
-
-				$pass['id']=$this->uri->segment(3);
-
-				$this->data['result']=$this->Vendor_model->get_vendor_info($pass);
-
-				$this->data['states'] = $this->Vendor_model->get_all_state();
-
-				$this->data['cities'] = $this->Vendor_model->get_all_cities();
-
-				$this->data['page_title'] = 'Edit Vendor'; 
+				$data['sort_by']=$this->input->post('sort_by');
 
 			}else{
 
-				$this->data['states'] = $this->Vendor_model->get_all_state();
-
-				$this->data['page_title'] = 'Add Vendor';
-
-				
+				$data['sort_by']='new_popular';
 
 			}
 
-			$this->load->view('index',@$this->data);
+			if(@$this->input->post('search_category')){
 
-		}else{
+				$data['search_category']=$this->input->post('search_category');
 
-			redirect('Home/index');
+			}
 
-		}		
+			if(@$this->input->post('search_author')){
 
-	}
+				$data['search_author']=$this->input->post('search_author');
 
-	public function save_vendor()
-	{
+			}
 
-		$photo="";
-		if ($this->input->post('photo')) {
-			$photo=$this->input->post('photo');
-			$pop = explode('/',$photo);
-			$photo=array_pop($pop);
-		}
-		$time = TIME();
-		if (!empty($_FILES['photo']['name']))
-        {	
-        	$temp=$photo;
-			$photo = $time.$_FILES["photo"]['name'];
-			$photo = str_replace(' ', '_', $photo);
-			$config['file_name'] = $photo;
-			$config['upload_path'] = './uploads/vendor_image/';
-			$config['allowed_types'] = 'gif|jpg|png';
-			$config['max_size']	= '50000';
+			if(@$this->input->post('search_price')){
+
+				$data['search_price']=$this->input->post('search_price');
+
+			}
+
+			if(@$this->input->post('search_price_slider')){
+
+				$data['search_price_slider']=$this->input->post('search_price_slider');
+
+			}
+
+			$this->data['categories']=$this->Store_model->get_search_category($data);
+
+			$this->data['prices']=$this->Store_model->get_search_by_price();
+
+			$this->data['authors']=$this->Store_model->get_search_author($data);
+
+			$this->data['lsliders']=$this->Store_model->get_long_banner();
+
+			$this->data['ssliders']=$this->Store_model->get_short_banner();
+
+			$this->data['books']=$this->Store_model->get_book_list($data);
+
+			$this->data['latest_review']=$this->Store_model->get_latest_review();
+
+			 
+
+			$this->load->view('header',$this->data);
+
 			
-			$this->upload->initialize($config);
-			$path ="uploads/vendor_image/".$temp;
-			if(file_exists($path)){
-				unlink($path); }
 
-			if ( ! $this->upload->do_upload('photo'))
-			{
-				$error = array('error' => $this->upload->display_errors());
-				echo $this->upload->display_errors();
-				exit();
-			}
+ 			$this->load->view('store',$this->data);  
 
-			$this::thumbnailfile($photo,100,100,'vendor_image');
-		}
+			$this->load->view('footer');
 
-		$image = 'uploads/vendor_image/'.$photo;
+			$this->load->view('load_js');
 
-		$thumb_image = 'uploads/thumb/vendor_image/'.$photo;
+ 	}
 
-		$data['id']=$this->input->post('id');
+ 	public function search_book()
+ 	{
+ 		
+ 		  $keyword=$this->input->post('keyword');
+ 		 
+		$this->load->library('session');
 
-		$data['name']=$this->input->post('name');
+		$this->load->model('Home_model');
 
-		$data['address']=$this->input->post('address');
+		$this->load->model('Store_model');
 
-		$data['city']=$this->input->post('city');
+		$this->data['menus_html']=$this->Home_model->dyanamic_menu_html($_POST); 
 
-		$data['state']=$this->input->post('state');
+  		$this->load->view('load_css');
 
-		$data['pincode']=$this->input->post('pincode');
+  		$this->data['categories']=$this->Store_model->get_search_category($data);
 
-		if($this->input->post('is_published')){
+		$this->data['prices']=$this->Store_model->get_search_by_price();
 
-			$data['is_published']=$this->input->post('is_published');
+		$this->data['authors']=$this->Store_model->get_search_author($data);
 
-		}else{
+		$this->data['lsliders']=$this->Store_model->get_long_banner();
 
-			$data['is_published']=0;
+		$this->data['ssliders']=$this->Store_model->get_short_banner();
 
-		}
+		$this->data['books']=$this->Store_model->get_book_list($data);
 
-		$data['telephone_no']=$this->input->post('telephone_no');
+		$this->data['latest_review']=$this->Store_model->get_latest_review();
 
-		$data['mobile_no']=$this->input->post('mobile_no');
+		$this->load->view('header',$this->data);
 
-		$data['company_name']=$this->input->post('company_name');
+		$this->load->view('store',$this->data);  
 
-		$data['gst_no']=$this->input->post('gst_no');
+		$this->load->view('footer');
 
-		$data['photo']=$image;
+		$this->load->view('load_js');
+ 	}
 
-		$data['thumb_photo']=$thumb_image;
-
-		$data['created_by']=$this->data['login_user_info']->id;
-
-		$data['created_date']=date('Y-m-d h:i:s');
-
-		$data['updated_by']=$this->data['login_user_info']->id;
-
-		$data['updated_date']=date('Y-m-d h:i:s');
-
-
-
-		if($this->Vendor_model->save_vendor($data)){
-
-			if($data['id']){
-
-				$this->session->set_flashdata('successmsg', 'Record Updated');
-
-			}else{
-
-				$this->session->set_flashdata('successmsg', '  Record  Saved ');
-
-			}
-
-			redirect('vendor/vendor-list');
-
-		}else{
-
-			redirect('vendor/vendor-add');
-
-		}
-
-	}
-
-
-	public function vendor_delete(){
-
-		if(($this->Home_model->check_permission('vendor_management','delete'))){
-
-			if (@$this->uri->segment(3)) {
-
-				$pass['id']=$this->uri->segment(3);
-
-				if($this->Vendor_model->delete_vendor($pass)){
-
-					$this->session->set_flashdata('successmsg', 'Record Deleted');
-
-				}else{
-
-					$this->session->set_flashdata('errorsmsg', 'Record Not Delete');
-
-				}
-
-				redirect('vendor/vendor-list');
-
-			}else{
-
-				redirect('Home/index');
-
-			} 
-
-		}else{
-
-			redirect('Home/index');
-
-		}
-
-		
-
-	}
-
-	function thumbnailfile($filename,$twidth,$theight,$folder)
-	{
-		$img=IMAGE_PATH.$folder.'/'.$filename;
-
-		//echo $img; die();
-
-		$imagename=$filename;
-
-		$extensions = explode('.',$img);
-
-		$ext = end($extensions);
-
-		$thumbname = $filename;
-
-		switch(strtolower($ext)){
-
-		case 'jpeg':
-
-		case 'jpg':
-
-		$imagesource = imagecreatefromjpeg ($img);
-
-		break;
-
-		case 'gif':
-
-		$imagesource = imagecreatefromgif ($img);
-
-		break;
-
-		case 'png':
-
-		$imagesource = imagecreatefrompng ($img);
-
-		break;
-
-		}
-
-		$iw = imagesx($imagesource);
-
-		$ih = imagesy($imagesource);
-
-		$tw=$twidth;
-
-		$th=$theight;
-
-			//Actual sizes
-
-			 $iw = imagesx($imagesource);
-
-			 $ih= imagesy($imagesource);
-
-			//Resize proportionately
-
-			if($iw >= $tw || $ih >= $th){
-
-				if($iw > $ih){
-
-					$ratio= $iw/$ih;
-
-					$w1= $tw;
-
-					$h1= $tw/$ratio;
-
-				}else{
-
-					$ratio= $ih/$iw;
-
-					$h1= $th;
-
-					$w1= $th/$ratio;
-
-				}
-
-			}else{
-
-				$w1=$iw;
-
-				$h1=$ih;
-
-			}
-
-		$img3 = imagecreatetruecolor( $w1, $h1 );
-
-		if($ext == "gif" or $ext == "png"){
-
-		imagecolortransparent($img3, imagecolorallocatealpha($img3, 0, 0, 0, 127));
-
-		imagealphablending($img3, false);
-
-		imagesavealpha($img3, true);
-
-		}
-
-		// echo THUMB_IMAGE_PATH.$thumbname; die();
-
-		imagecopyresampled(  $img3, $imagesource, 0, 0, 0 , 0, $w1, $h1, $iw, $ih );	
-
-		switch(strtolower($ext)){
-
-		case 'jpeg':
-
-		case 'jpg':
-
-		imagejpeg($img3, THUMB_IMAGE_PATH.$folder.'/'.$thumbname);
-
-		break;
-
-		case 'gif':
-
-		imagegif($img3, THUMB_IMAGE_PATH.$folder.'/'.$thumbname);
-
-		break;
-
-		case 'png':
-
-		imagepng($img3,THUMB_IMAGE_PATH.$folder.'/'.$thumbname);
-
-		break;
-
-		}
-
-		imagedestroy($imagesource);
-
-	}
-
-	function get_sub_city()
-	{
-		$id=$this->input->post('id'); 
-		$data['posts'] = $this->Vendor_model->get_sub_city($id);
-		$html= "<select id='city_id' name='city' class='form-control select2'>";
-		$html= $html."<option value=''>Select City</option>";
-		foreach($data['posts'] as $row)
-		{			
-			$html= $html."<option value='$row->id'>$row->city_name</option>";
-		}	
-		$html= $html. "</select>";
-		echo $html;
-	}
-
-
-	/************ Vendor MASTER END ****************/
+	
 
 	 
+
+	public function books()
+
+	{
+
+	
+ 
+ 		$this->load->helper('url');
+		$cat_id = $this->uri->segment(3);
+		$this->load->library('session');
+		$this->load->model('Home_model');
+
+		$this->load->model('Store_model');
+if($this->input->post('search_query')){
+
+				$data['keyword']=$this->input->post('search_query');
+
+			}else{
+
+				$data['keyword']='';
+
+			}
+
+			if($this->input->post('search_start')){
+
+				$data['start']=$this->input->post('search_start');
+
+			}else{
+
+				$data['start']=0;
+
+			}
+
+			if($this->input->post('no_of_rc')){
+
+				$data['no_of_rc']=$this->input->post('no_of_rc');
+
+			}else{
+
+				$data['no_of_rc']=10;
+
+			}
+
+			if($this->input->post('sort_by')){
+
+				$data['sort_by']=$this->input->post('sort_by');
+
+			}else{
+
+				$data['sort_by']='new_popular';
+
+			}
+			
+			if(@$cat_id){
+				$uni_arra['table']="tbl_book_category";
+				$uni_arra['alias_name']=$cat_id;
+				$uni_rs=$this->Home_model->get_id_from_unique_name($uni_arra);
+ 				$data['search_category']=$uni_rs->id;
+			}
+			
+			if(@$this->input->post('search_category')){
+				$data['search_category']=$this->input->post('search_category');
+			}
+
+if(@$this->input->post('keyword')){
+				$data['keyword']=$this->input->post('keyword');
+			}
+			
+			 
+			if(@$this->input->post('search_author')){
+
+				$data['search_author']=$this->input->post('search_author');
+
+			}
+
+			if(@$this->input->post('search_price')){
+
+				$data['search_price']=$this->input->post('search_price');
+
+			}
+
+			if(@$this->input->post('search_price_slider')){
+
+				$data['search_price_slider']=$this->input->post('search_price_slider');
+
+			}
+		$this->data['menus_html']=$this->Home_model->dyanamic_menu_html($data); 
+
+		$this->data['meta_data'] = $this->Store_model->get_meta_data_cat($cat_id);
+
+		$this->data['meta_data_online'] = $this->Store_model->get_meta_data_online();
+
+
+  			$this->load->view('load_css',$this->data);
+
+			$this->data['categories']=$this->Store_model->get_search_category($data);
+
+			$this->data['prices']=$this->Store_model->get_search_by_price();
+
+			$this->data['authors']=$this->Store_model->get_search_author($data);
+
+			$this->data['lsliders']=$this->Store_model->get_long_banner();
+
+			$this->data['ssliders']=$this->Store_model->get_short_banner();
+
+			$this->data['books']=$this->Store_model->get_book_list($data);
+
+			$this->data['latest_review']=$this->Store_model->get_latest_review();
+
+			$this->data['cat_id']=$cat_id;
+
+
+			$this->load->view('header',$this->data);
+
+ 			$this->load->view('store',$this->data);  
+
+			$this->load->view('footer');
+
+			$this->load->view('load_js');
+
+ 	}
+	
+	public function f_books()
+
+	{
+
+	
+ 
+ 		$this->load->helper('url');
+		$cat_id = $this->uri->segment(4);
+		$this->load->library('session');
+		$this->load->model('Home_model');
+
+		$this->load->model('Store_model');
+if($this->input->post('search_query')){
+
+				$data['keyword']=$this->input->post('search_query');
+
+			}else{
+
+				$data['keyword']='';
+
+			}
+
+			if($this->input->post('search_start')){
+
+				$data['start']=$this->input->post('search_start');
+
+			}else{
+
+				$data['start']=0;
+
+			}
+
+			if($this->input->post('no_of_rc')){
+
+				$data['no_of_rc']=$this->input->post('no_of_rc');
+
+			}else{
+
+				$data['no_of_rc']=10;
+
+			}
+
+			if($this->input->post('sort_by')){
+
+				$data['sort_by']=$this->input->post('sort_by');
+
+			}else{
+
+				$data['sort_by']='new_popular';
+
+			}
+			
+			if(@$cat_id){
+ 				$data['search_category']=$cat_id;
+			}
+			
+			if(@$this->input->post('search_category')){
+				$data['search_category']=$this->input->post('search_category');
+			}
+
+if(@$this->input->post('keyword')){
+				$data['keyword']=$this->input->post('keyword');
+			}
+			
+			 
+			if(@$this->input->post('search_author')){
+
+				$data['search_author']=$this->input->post('search_author');
+
+			}
+
+			 
+
+			 
+		$this->data['menus_html']=$this->Home_model->dyanamic_menu_html1($data); 
+
+  			$this->load->view('load_css');
+
+  			
+
+			$this->data['categories']=$this->Store_model->get_search_category($data);
+
+			$this->data['prices']=$this->Store_model->get_search_by_price();
+
+			$this->data['authors']=$this->Store_model->get_search_author($data);
+
+			$this->data['lsliders']=$this->Store_model->get_long_banner();
+
+			$this->data['ssliders']=$this->Store_model->get_short_banner();
+
+			$this->data['books']=$this->Store_model->get_book_list($data);
+
+			$this->data['latest_review']=$this->Store_model->get_latest_review();
+
+			$this->data['cat_id']=$cat_id;
+
+			$this->load->view('f_header',$this->data);
+
+ 			$this->load->view('f_store',$this->data);  
+ 
+			$this->load->view('load_js');
+
+ 	}
+				
+ 	
 
 }
 
